@@ -1,3 +1,79 @@
-https://picoapps.xyz/builder
-https://a.picoapps.xyz/public-peace
-<iframe title="Pico embed" src="https://a.picoapps.xyz/public-peace?utm_medium=embed&utm_source=embed" width="100%" height="500px" style="background:white"></iframe>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candlestick Pattern Recognition</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.3/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        #camera { width: 100%; }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen">
+    <h1 class="text-4xl font-bold mb-4">Candlestick Pattern Recognition</h1>
+    <div class="w-full max-w-md bg-white p-4 rounded-lg shadow">
+        <video id="camera" autoplay playsinline class="rounded-md"></video>
+        <button id="capture" class="w-full bg-blue-500 text-white py-2 mt-4 rounded-md">Capture Photo</button>
+    </div>
+    <canvas id="patternCanvas" class="hidden"></canvas>
+    <div id="results" class="mt-4 w-full max-w-md bg-white p-4 rounded-lg shadow"></div>
+    <footer class="text-xs text-gray-600 mt-4">
+        * Policy: We are not responsible for any financial loss.
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ml5@latest"></script>
+    <script>
+        const video = document.getElementById('camera');
+        const canvas = document.getElementById('patternCanvas');
+        const resultsDiv = document.getElementById('results');
+        const captureButton = document.getElementById('capture');
+        const ctx = canvas.getContext('2d');
+        // Get access to the camera        navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.srcObject = stream;
+        })
+        .catch(err => {
+            console.error("Error accessing the camera: ", err);
+        });
+
+        // Capture image and process it        captureButton.addEventListener('click', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            processImage();
+        });
+
+        // Image processing and pattern recognition        async function processImage() {
+            const image = new Image();
+            image.src = canvas.toDataURL();
+            image.onload = async () => {
+                const classifier = await ml5.imageClassifier('MobileNet');
+                classifier.classify(image, (err, results) => {
+                    if (err) {
+                        console.error(err);
+                        return;
+                    }
+                    analyzeResults(results);
+                });
+            };
+        }
+
+        // Analyzing the results and displaying recommendations        function analyzeResults(results) {
+            resultsDiv.innerHTML = "";
+            results.forEach(result => {
+                resultsDiv.innerHTML += `<p>${result.label}: ${(result.confidence * 100).toFixed(2)}%</p>`;
+            });
+            // Dummy logic to decide buy/sell based on recognized patterns            const pattern = results[0].label.toLowerCase();
+            let recommendation = "Hold";
+            if (pattern.includes("bullish")) {
+                recommendation = "Buy";
+            } else if (pattern.includes("bearish")) {
+                recommendation = "Sell";
+            }
+
+            resultsDiv.innerHTML += `<p>Recommendation: ${recommendation}</p>`;
+        }
+    </script>
+</body>
+</html>
